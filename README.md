@@ -1,2 +1,2 @@
-# adaptive_control
-Assignments from Adaptive control course
+# Adaptive control assignments
+This repository contains the solutions of assignments from adaptive control course.
