@@ -1,0 +1,77 @@
+clear
+
+% control parameters
+number_of_actions = 10;
+number_of_plays = 1000;
+number_of_games = 500;
+epsilions = [0, 0.01, 0.1 0.2];
+number_of_epsilions = length(epsilions);
+% true values of rewards
+% Q_star = randn(number_of_actions, 1);
+Q_star = [-0.4 1.3 0.04 0.53 -0.15 -1.01 0.2 1.48 0.36 -0.5];
+actions = 1:number_of_actions;
+
+
+%%
+avg_rewards = zeros(number_of_epsilions, number_of_plays);
+tot_action_counter = zeros(length(epsilions), number_of_actions);
+% run simulation for all epsilion values
+for eps_index = 1:number_of_epsilions
+    epsilion_star = epsilions(eps_index);
+    % run necessary number of games
+    for game_count = 1:number_of_games
+        % initial estimate
+        current_Q = randn(1, number_of_actions);
+        % how many times each action was selected in current game
+        curr_action_counter = zeros(1, number_of_actions);
+        curr_avg_reward = zeros(1, number_of_actions);
+        curr_total_reward = 0;
+        % run the game
+        for i = 1:number_of_plays
+            % the action number after which we stop the exploration
+            if i > 1000
+                epsilion = 0;
+            else
+                epsilion = epsilion_star;
+            end
+            % select the greedy action
+            [greedy_action_estim, greedy_action] = max(current_Q);
+            % if true, no exploration
+            if rand() > epsilion
+                % no exploration, select greedy aciton
+                curr_action_estim = greedy_action_estim;
+                curr_action = greedy_action;
+            else
+                % remove the greedy aciton then explore
+                non_greedy_actions = actions;
+                non_greedy_actions(greedy_action) = [];
+                curr_action = randsample(non_greedy_actions, 1);
+                curr_action_estim = current_Q(curr_action);
+            end
+            % get the reward
+            curr_reward = Q_star(curr_action) + randn;
+            % update the current estimate
+            % formula to calculate the new estimate of the current action
+            current_Q(curr_action) = (curr_action_counter(curr_action) * curr_action_estim + curr_reward)/ (curr_action_counter(curr_action)+1);
+            % increment the counter for current action
+            curr_action_counter(curr_action) = curr_action_counter(curr_action) + 1;
+
+            % average reward calculation
+            curr_total_reward = curr_total_reward + curr_reward;
+            curr_avg_reward(i) = curr_total_reward / i;
+        end
+        tot_action_counter(eps_index, :) = tot_action_counter(eps_index, :) + curr_action_counter;
+        avg_rewards(eps_index, :) = (avg_rewards(eps_index, :)*game_count + curr_avg_reward) / (game_count+1);
+    end
+    
+end
+
+fig = figure;
+subplot(2, 1, 1);
+plot(1:number_of_plays, avg_rewards);
+title("Simulation for different values of epsilion");
+legend(["0", "0.01", "0.1", "0.2"],"Location","Best");
+subplot(2, 1, 2);
+plot(actions, tot_action_counter);
+title("Total No of each action selected");
+legend(["0", "0.01", "0.1", "0.2"]);
